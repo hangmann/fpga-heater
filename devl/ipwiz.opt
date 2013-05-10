@@ -1,0 +1,8 @@
+-batch 
+-create lut_heat_core 
+-ver 1.00.a 
+-dir "/home/hendrik/work/heat_cores" 
+-lang vhdl 
+-bus plbv46 s 
+-reg 8 
+-xps 
