@@ -53,6 +53,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+use IEEE.numeric_std.ALL;
 
 library proc_common_v3_00_a;
 use proc_common_v3_00_a.proc_common_pkg.all;
@@ -161,7 +162,7 @@ architecture IMP of user_logic is
 
   signal inout_bit 	 : std_logic;
   signal inout_vector : std_logic_vector (C_NUM_LUTS downto 0) := (others=>'0');
-	signal and_value	 :	std_logic;
+  signal and_value	 :	std_logic;
 	
 	signal direction : std_logic_vector(32 downto 0) := (others => '0');
 
@@ -171,53 +172,44 @@ architecture IMP of user_logic is
   attribute keep of IMP : architecture is "true";
   
   signal adjust : std_logic_vector (31 downto 0);
-  signal numberOfActive : std_logic_vector (5 downto 0);
-  signal block_items : integer;
+  signal adjust_heaters : std_logic_vector (31 downto 0) := (others => '0');
+  constant block_items : integer := C_NUM_LUTS / 32;
   signal enable_heater : std_logic;
-  signal enable_vector : std_logic_vector (C_NUM_LUTS downto 0);
+  signal enable_vector : std_logic_vector (C_NUM_LUTS - 1 downto 0);
   signal j : integer := 0;
   signal enabled_count : integer := 0;
   signal temp : std_logic_vector (5 downto 0);
   signal enable_count : std_logic_vector (31 downto 0);
+  signal int_adjust : integer := 0;
+  signal adjust_temp : integer;
+  signal unsigned_adjust : unsigned (31 downto 0);
   
 begin
+	
+  adjust_heaters <= slv_reg1;
 
-  init_proc : process( adjust ) is
-  begin
-		block_items <= 47	 ;  --ein ONOFF bit für 47 LUTs
-  
-		for i in 0 to C_NUM_LUTS - 1 loop
-			enable_vector(i) <= adjust(j);
-			if j = block_items - 1 then 
-				j <= 0;
-			else
-				j <= j + 1;
-			end if;
+
+  init_proc : process( adjust_heaters, enable_heater ) is
+  begin		
+		--if enable_heater = '0' then
+	--		enable_vector <= (others => '0');
+	--	else
+		for i in 0 to 31 loop
+			for j in 0 to block_items - 1 loop
+				enable_vector(block_items * i + j) <= adjust_heaters(i) and enable_heater;
+			end loop;
 		end loop;
+--		end if;
   end process init_proc;
-  
- 
---
---  countBits : process (adjust) is
---	begin 
---	 temp <= "000000";
---	 for i in 0 to 31 loop
---			if adjust(i) = '1' then
---				temp <= temp + '1';
---			end if;
---	 end loop;
---	 numberOfActive <= temp;
---  end process;
 
-  count_enabled : process( adjust ) is
+  enable : process ( slv_reg0 ) is
   begin
-		for i in 0 to C_NUM_LUTS - 1 loop
-			if enable_vector(i) = '1' then
-				enabled_count <= enabled_count + 1;
-				enable_count <= conv_std_logic_vector(enabled_count, 32);
-			end if;
-		end loop;
-  end process count_enabled;
+		if slv_reg0 = 1 then
+			enable_heater <= '1';
+		else
+			enable_heater <= '0';
+		end if;
+  end process enable;
 
 
 	pipeline : for bit_index in 0 to C_NUM_LUTS - 1 generate
@@ -254,6 +246,9 @@ begin
   slv_reg_read_sel  <= Bus2IP_RdCE(0 to 7);
   slv_write_ack     <= Bus2IP_WrCE(0) or Bus2IP_WrCE(1) or Bus2IP_WrCE(2) or Bus2IP_WrCE(3) or Bus2IP_WrCE(4) or Bus2IP_WrCE(5) or Bus2IP_WrCE(6) or Bus2IP_WrCE(7);
   slv_read_ack      <= Bus2IP_RdCE(0) or Bus2IP_RdCE(1) or Bus2IP_RdCE(2) or Bus2IP_RdCE(3) or Bus2IP_RdCE(4) or Bus2IP_RdCE(5) or Bus2IP_RdCE(6) or Bus2IP_RdCE(7);
+	
+	
+
 
   -- implement slave model software accessible register(s)
   SLAVE_REG_WRITE_PROC : process( Bus2IP_Clk ) is
@@ -275,15 +270,8 @@ begin
             for byte_index in 0 to (C_SLV_DWIDTH/8)-1 loop
               if ( Bus2IP_BE(byte_index) = '1' ) then
 				    slv_reg0(byte_index*8 to byte_index*8+7) <= Bus2IP_Data(byte_index*8 to byte_index*8+7);
-                -- slv_reg0(byte_index*8 to byte_index*8+7) <= Bus2IP_Data(byte_index*8 to byte_index*8+7);
               end if;
             end loop;
-				
-				if slv_reg1 = 1 then
-					enable_heater <= '1';
-				else
-					enable_heater <= '0';
-				end if;
 				
           when "01000000" =>
             for byte_index in 0 to (C_SLV_DWIDTH/8)-1 loop
@@ -292,7 +280,7 @@ begin
               end if;
             end loop;
 				
-				adjust <= slv_reg2;
+				
 			
           when "00100000" =>
             for byte_index in 0 to (C_SLV_DWIDTH/8)-1 loop
@@ -302,10 +290,10 @@ begin
             end loop;
 	 
 	 			if slv_reg2 = 0 then
-					adjust <= adjust(30 downto 0) & '0';
+				--	adjust_heaters <= adjust_heaters(30 downto 0) & '0';
 		
 				elsif slv_reg2 = 1 then
-					adjust <= '1' & adjust(31 downto 1);
+				--	adjust_heaters <= '1' & adjust_heaters(31 downto 1);
 		
 				end if;	
 				
@@ -361,14 +349,12 @@ begin
 
     case slv_reg_read_sel is
       when "10000000" => slv_ip2bus_data <= "0"& enable_heater;
---	   when "10000000" => slv_ip2bus_data <= inout_vector(C_NUM_LUTS -1 downto C_NUM_LUTS - 32);
-      when "01000000" => slv_ip2bus_data <= adjust;
-      when "00100000" => slv_ip2bus_data <= enable_count;
+      when "01000000" => slv_ip2bus_data <= adjust_heaters;
+      when "00100000" => slv_ip2bus_data <= slv_reg2;
       when "00010000" => slv_ip2bus_data <= slv_reg3;
       when "00001000" => slv_ip2bus_data <= slv_reg4;
       when "00000100" => slv_ip2bus_data <= slv_reg5;
       when "00000010" => slv_ip2bus_data <= slv_reg6;
-      --when "00000001" => slv_ip2bus_data <= inout_vector(C_NUM_LUTS -1 downto C_NUM_LUTS - 32);
 		when "00000001" => slv_ip2bus_data <= inout_vector(C_NUM_LUTS - offset - 1 downto C_NUM_LUTS - offset - 32);
       when others => slv_ip2bus_data <= (others => '0');
     end case;
