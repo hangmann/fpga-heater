@@ -1,28 +1,6 @@
 ------------------------------------------------------------------------------
 -- user_logic.vhd - entity/architecture pair
 ------------------------------------------------------------------------------
---
--- ***************************************************************************
--- ** Copyright (c) 1995-2010 Xilinx, Inc.  All rights reserved.            **
--- **                                                                       **
--- ** Xilinx, Inc.                                                          **
--- ** XILINX IS PROVIDING THIS DESIGN, CODE, OR INFORMATION "AS IS"         **
--- ** AS A COURTESY TO YOU, SOLELY FOR USE IN DEVELOPING PROGRAMS AND       **
--- ** SOLUTIONS FOR XILINX DEVICES.  BY PROVIDING THIS DESIGN, CODE,        **
--- ** OR INFORMATION AS ONE POSSIBLE IMPLEMENTATION OF THIS FEATURE,        **
--- ** APPLICATION OR STANDARD, XILINX IS MAKING NO REPRESENTATION           **
--- ** THAT THIS IMPLEMENTATION IS FREE FROM ANY CLAIMS OF INFRINGEMENT,     **
--- ** AND YOU ARE RESPONSIBLE FOR OBTAINING ANY RIGHTS YOU MAY REQUIRE      **
--- ** FOR YOUR IMPLEMENTATION.  XILINX EXPRESSLY DISCLAIMS ANY              **
--- ** WARRANTY WHATSOEVER WITH RESPECT TO THE ADEQUACY OF THE               **
--- ** IMPLEMENTATION, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OR        **
--- ** REPRESENTATIONS THAT THIS IMPLEMENTATION IS FREE FROM CLAIMS OF       **
--- ** INFRINGEMENT, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       **
--- ** FOR A PARTICULAR PURPOSE.                                             **
--- **                                                                       **
--- ***************************************************************************
---
-------------------------------------------------------------------------------
 -- Filename:          user_logic.vhd
 -- Version:           1.00.a
 -- Description:       User logic.
@@ -212,15 +190,15 @@ begin
   end process enable;
 
 
-	pipeline : for bit_index in 0 to C_NUM_LUTS - 1 generate
+	lut_oscs : for bit_index in 0 to C_NUM_LUTS - 1 generate
 	begin
 
 		lut_osc : lut_oscilator
 		port map (	en 	=> enable_vector(bit_index),
-						Q 		=> inout_vector(bit_index));
+				Q 		=> inout_vector(bit_index));
 						
 
-		and_value <= and_value and inout_vector(bit_index);
+		
 	end generate pipeline;
 --
 
@@ -355,7 +333,7 @@ begin
       when "00001000" => slv_ip2bus_data <= slv_reg4;
       when "00000100" => slv_ip2bus_data <= slv_reg5;
       when "00000010" => slv_ip2bus_data <= slv_reg6;
-		when "00000001" => slv_ip2bus_data <= inout_vector(C_NUM_LUTS - offset - 1 downto C_NUM_LUTS - offset - 32);
+      when "00000001" => slv_ip2bus_data <= inout_vector(C_NUM_LUTS - offset - 1 downto C_NUM_LUTS - offset - 32);
       when others => slv_ip2bus_data <= (others => '0');
     end case;
 
