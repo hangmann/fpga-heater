@@ -169,15 +169,7 @@ begin
                 slv_reg2(byte_index*8 to byte_index*8+7) <= Bus2IP_Data(byte_index*8 to byte_index*8+7);
               end if;
             end loop;
-	 
-		if slv_reg2 = 0 then
-		--	adjust_heaters <= adjust_heaters(30 downto 0) & '0';
-
-		elsif slv_reg2 = 1 then
-		--	adjust_heaters <= '1' & adjust_heaters(31 downto 1);
-
-		end if;	
-				
+	 			
           when "00010000" =>
             for byte_index in 0 to (C_SLV_DWIDTH/8)-1 loop
               if ( Bus2IP_BE(byte_index) = '1' ) then

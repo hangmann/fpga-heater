@@ -10,15 +10,14 @@ use proc_common_v3_00_a.ipif_pkg.all;
 library plbv46_slave_single_v1_01_a;
 use plbv46_slave_single_v1_01_a.plbv46_slave_single;
 
-library heat_core_v1_00_a;
-use heat_core_v1_00_a.user_logic;
+library simple_timebase_v1_00_a;
+use simple_timebase_v1_00_a.user_logic;
 
 
 
-entity heat_core is
+entity simple_timebase is
   generic
   (
-    C_NUM_LUTS		                 : integer              := 1000;
     C_BASEADDR                     : std_logic_vector     := X"FFFFFFFF";
     C_HIGHADDR                     : std_logic_vector     := X"00000000";
     C_SPLB_AWIDTH                  : integer              := 32;
@@ -30,7 +29,7 @@ entity heat_core is
     C_SPLB_SUPPORT_BURSTS          : integer              := 0;
     C_SPLB_SMALLEST_MASTER         : integer              := 32;
     C_SPLB_CLK_PERIOD_PS           : integer              := 10000;
-    C_INCLUDE_DPHASE_TIMER         : integer              := 1;
+    C_INCLUDE_DPHASE_TIMER         : integer              := 0;
     C_FAMILY                       : string               := "virtex5"
   );
   port
@@ -83,10 +82,9 @@ entity heat_core is
   attribute SIGIS of SPLB_Clk      : signal is "CLK";
   attribute SIGIS of SPLB_Rst      : signal is "RST";
 
-end entity heat_core;
+end entity simple_timebase;
 
-
-architecture IMP of heat_core is
+architecture IMP of simple_timebase is
 
   constant ZERO_ADDR_PAD                  : std_logic_vector(0 to 31) := (others => '0');
   constant USER_SLV_BASEADDR              : std_logic_vector     := C_BASEADDR;
@@ -98,8 +96,7 @@ architecture IMP of heat_core is
       ZERO_ADDR_PAD & USER_SLV_HIGHADDR   
     );
 
-
-  constant USER_SLV_NUM_REG               : integer              := 8;
+  constant USER_SLV_NUM_REG               : integer              := 1;
   constant USER_NUM_REG                   : integer              := USER_SLV_NUM_REG;
 
   constant IPIF_ARD_NUM_CE_ARRAY          : INTEGER_ARRAY_TYPE   := 
@@ -117,6 +114,7 @@ architecture IMP of heat_core is
   constant USER_SLV_CE_INDEX              : integer              := calc_start_ce_index(IPIF_ARD_NUM_CE_ARRAY, USER_SLV_CS_INDEX);
 
   constant USER_CE_INDEX                  : integer              := USER_SLV_CE_INDEX;
+
 
   signal ipif_Bus2IP_Clk                : std_logic;
   signal ipif_Bus2IP_Reset              : std_logic;
@@ -215,13 +213,11 @@ begin
       Bus2IP_WrCE                    => ipif_Bus2IP_WrCE
     );
 
-  USER_LOGIC_I : entity heat_core_v1_00_a.user_logic
+  USER_LOGIC_I : entity simple_timebase_v1_00_a.user_logic
     generic map
     (
-
       C_SLV_DWIDTH                   => USER_SLV_DWIDTH,
-      C_NUM_REG                      => USER_NUM_REG,
-		C_NUM_LUTS							 => C_NUM_LUTS
+      C_NUM_REG                      => USER_NUM_REG
     )
     port map
     (
