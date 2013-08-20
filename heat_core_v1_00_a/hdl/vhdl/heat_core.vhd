@@ -18,7 +18,7 @@ use heat_core_v1_00_a.user_logic;
 entity heat_core is
   generic
   (
-    C_NUM_LUTS		                 : integer              := 1000;
+    C_NUM_LUTS		           : integer              := 1000;
     C_BASEADDR                     : std_logic_vector     := X"FFFFFFFF";
     C_HIGHADDR                     : std_logic_vector     := X"00000000";
     C_SPLB_AWIDTH                  : integer              := 32;
@@ -221,7 +221,7 @@ begin
 
       C_SLV_DWIDTH                   => USER_SLV_DWIDTH,
       C_NUM_REG                      => USER_NUM_REG,
-		C_NUM_LUTS							 => C_NUM_LUTS
+      C_NUM_LUTS                     => C_NUM_LUTS
     )
     port map
     (
